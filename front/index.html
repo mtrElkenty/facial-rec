@@ -9,10 +9,14 @@
 </head>
 
 <body>
+    <div id="loader" class="loader-overlay hidden">
+        <div class="loader"></div>
+    </div>
     <nav class="navbar">
         <div class="container">
+            <img src="images/logo.png" alt="Company Logo" class="nav-logo">
             <div class="nav-links">
-                <button class="nav-btn active" data-page="register">Register</button>
+                <button class="nav-btn active" data-page="students">Students</button>
                 <button class="nav-btn" data-page="match">Match</button>
                 <button class="nav-btn" data-page="attendance">Attendance</button>
             </div>
@@ -20,25 +24,53 @@
     </nav>
 
     <main class="container">
-        <!-- Register Section -->
-        <section id="register" class="page active">
+        <!-- Students Section -->
+        <section id="students" class="page active">
             <div class="card">
-                <h2>Register Student</h2>
-                <form id="registerForm">
-                    <div class="form-group">
-                        <input type="text" id="studentName" placeholder="Student Name" required>
+                <div class="section-header">
+                    <h2>Students</h2>
+                    <div class="header-actions">
+                        <input type="text" id="studentSearch" placeholder="Search students..." class="search-input">
+                        <button id="toggleRegisterForm" class="btn secondary">Register New Student</button>
                     </div>
-                    <div class="upload-area" id="registerUpload">
-                        <svg class="upload-icon" viewBox="0 0 24 24">
-                            <path
-                                d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                        </svg>
-                        <span>Select photos</span>
-                        <input type="file" accept="image/*" multiple required>
+                </div>
+
+                <!-- Registration Form (Hidden by default) -->
+                <div id="registerFormContainer" class="hidden">
+                    <form id="registerForm">
+                        <div class="form-group">
+                            <input type="text" id="studentName" placeholder="Student Name" required>
+                        </div>
+                        <div class="upload-area" id="registerUpload">
+                            <svg class="upload-icon" viewBox="0 0 24 24">
+                                <path
+                                    d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
+                            <span>Select photos</span>
+                            <input type="file" accept="image/*" multiple required>
+                        </div>
+                        <div id="imagePreview" class="image-preview"></div>
+                        <button type="submit" class="btn">Register</button>
+                    </form>
+                </div>
+
+                <!-- Students List -->
+                <div class="students-list">
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Image</th>
+                                    <th>Name</th>
+                                    <th>Registration Date</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="studentsList"></tbody>
+                        </table>
                     </div>
-                    <div id="imagePreview" class="image-preview"></div>
-                    <button type="submit" class="btn">Register</button>
-                </form>
+                </div>
             </div>
         </section>
 
@@ -81,6 +113,23 @@
     </main>
 
     <script src="app.js"></script>
+
+    <!-- Student Details Modal -->
+    <div id="studentModal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Student Details</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="student-info">
+                    <p><strong>ID:</strong> <span id="modalStudentId"></span></p>
+                    <p><strong>Name:</strong> <span id="modalStudentName"></span></p>
+                    <p><strong>Registration Date:</strong> <span id="modalStudentDate"></span></p>
+                </div>
+            </div>
+        </div>
+    </div>
 </body>
 
 </html>

@@ -88,6 +88,7 @@ api/
 ├── app.py              # Main Flask application
 ├── student_utils.py    # Face recognition utilities
 ├── seed_students.py    # Database seeding utility
+├── database.py         # Database management utilities
 ├── requirements.txt    # Dependencies
 ├── Dockerfile         # Docker configuration
 ├── uploads/           # Temporary image storage

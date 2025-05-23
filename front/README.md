@@ -13,6 +13,7 @@ This is the frontend application for the Face Recognition System, providing a us
 - `index.html` - Main HTML file containing the application structure
 - `styles.css` - CSS styles for the application
 - `app.js` - JavaScript code handling the application logic
+- `images/` - Directory containing frontend image assets
 
 ## Pages
 

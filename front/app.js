@@ -1,5 +1,19 @@
 const API_URL = "http://localhost:5000";
 
+// Utility function for API calls with loader
+async function apiCall(url, options = {}) {
+  const loader = document.getElementById("loader");
+  loader.classList.remove("hidden");
+
+  try {
+    const response = await fetch(url, options);
+    const data = await response.json();
+    return { response, data };
+  } finally {
+    loader.classList.add("hidden");
+  }
+}
+
 // Navigation
 document.querySelectorAll(".nav-btn").forEach((button) => {
   button.addEventListener("click", () => {
@@ -85,7 +99,101 @@ document.querySelectorAll(".upload-area").forEach((area) => {
   }
 });
 
-// Register form
+// Toggle registration form
+const toggleRegisterForm = document.getElementById("toggleRegisterForm");
+const registerFormContainer = document.getElementById("registerFormContainer");
+
+toggleRegisterForm.addEventListener("click", () => {
+  registerFormContainer.classList.toggle("hidden");
+  toggleRegisterForm.textContent = registerFormContainer.classList.contains(
+    "hidden"
+  )
+    ? "Register New Student"
+    : "Cancel Registration";
+});
+
+// Fetch and display students
+async function fetchStudents() {
+  try {
+    const { data } = await apiCall(`${API_URL}/students`);
+    const students = data["students"];
+    displayStudents(students);
+  } catch (error) {
+    console.error("Error fetching students:", error);
+  }
+}
+
+let allStudents = []; // Store all students for filtering
+
+function displayStudents(students) {
+  allStudents = students; // Store the full list
+  filterAndDisplayStudents();
+}
+
+function filterAndDisplayStudents() {
+  const searchTerm = document
+    .getElementById("studentSearch")
+    .value.toLowerCase();
+  const filteredStudents = allStudents.filter((student) =>
+    student.name.toLowerCase().includes(searchTerm)
+  );
+
+  const studentsList = document.getElementById("studentsList");
+  studentsList.innerHTML = filteredStudents
+    .map(
+      (student) => `
+        <tr>
+            <td>ST${student.id}</td>
+            <td class="student-cell">
+              ${
+                student.image_path
+                  ? `<img src="${API_URL}/uploads/${student.image_path}" alt="${student.name}" class="student-thumbnail">`
+                  : '<div class="student-thumbnail placeholder">No Image</div>'
+              }
+            </td>
+            <td>${student.name}</td>
+            <td>${new Date(student.created_at).toLocaleString()}</td>
+            <td>
+                <button class="btn small" onclick="viewStudent('${
+                  student.id
+                }')">View</button>
+                <button class="btn small danger" onclick="deleteStudent('${
+                  student.id
+                }')">Delete</button>
+            </td>
+        </tr>
+    `
+    )
+    .join("");
+}
+
+// Add search input event listener
+document
+  .getElementById("studentSearch")
+  .addEventListener("input", filterAndDisplayStudents);
+
+// Fetch students when the page loads
+document.addEventListener("DOMContentLoaded", () => {
+  fetchStudents();
+
+  // Modal functionality
+  const studentModal = document.getElementById("studentModal");
+  const modalClose = document.querySelector(".modal-close");
+
+  // Close modal when clicking the close button
+  modalClose.addEventListener("click", () => {
+    studentModal.classList.add("hidden");
+  });
+
+  // Close modal when clicking outside the modal content
+  studentModal.addEventListener("click", (e) => {
+    if (e.target === studentModal) {
+      studentModal.classList.add("hidden");
+    }
+  });
+});
+
+// Handle student registration
 document
   .getElementById("registerForm")
   .addEventListener("submit", async (e) => {
@@ -102,23 +210,23 @@ document
     }
 
     try {
-      const response = await fetch(`${API_URL}/students`, {
+      const { response } = await apiCall(`${API_URL}/students`, {
         method: "POST",
         body: formData,
       });
 
-      const data = await response.json();
-
       if (response.ok) {
-        alert("Student registered successfully!");
-        form.reset();
-        document.querySelector("#registerUpload span").textContent =
-          "Select photos";
+        // Hide the form and refresh the students list
+        registerFormContainer.classList.add("hidden");
+        toggleRegisterForm.textContent = "Register New Student";
+        fetchStudents();
+        e.target.reset();
       } else {
-        alert(`Error: ${data.error}`);
+        throw new Error("Registration failed");
       }
     } catch (error) {
-      alert("Error connecting to the server");
+      console.error("Error registering student:", error);
+      alert("Failed to register student. Please try again.");
     }
   });
 
@@ -133,12 +241,11 @@ document.getElementById("matchForm").addEventListener("submit", async (e) => {
   formData.append("image", files[0]);
 
   try {
-    const response = await fetch(`${API_URL}/match`, {
+    const { response, data } = await apiCall(`${API_URL}/match`, {
       method: "POST",
       body: formData,
     });
 
-    const data = await response.json();
     const resultDiv = document.getElementById("matchResult");
 
     if (response.ok) {
@@ -156,22 +263,90 @@ document.getElementById("matchForm").addEventListener("submit", async (e) => {
 // Load attendance
 async function loadAttendance() {
   try {
-    const response = await fetch(`${API_URL}/attendance`);
-    const data = await response.json();
+    const { data } = await apiCall(`${API_URL}/attendance`);
+    const attendance = data["attendance"];
 
     const tbody = document.getElementById("attendanceList");
     tbody.innerHTML = "";
 
-    data.attendance.forEach((record) => {
+    attendance.forEach((record) => {
       const tr = document.createElement("tr");
       tr.innerHTML = `
-                <td>${record[0]}</td>
-                <td>${record[1]}</td>
+                <td>${record.name}</td>
+                <td>${new Date(record.timestamp).toLocaleString()}</td>
             `;
       tbody.appendChild(tr);
     });
   } catch (error) {
     console.error("Error loading attendance:", error);
+  }
+}
+
+// View student details
+async function viewStudent(studentId) {
+  try {
+    const { response, data: student } = await apiCall(
+      `${API_URL}/students/${studentId}`
+    );
+
+    if (response.ok) {
+      // Update modal content
+      document.getElementById("modalStudentId").textContent = `ST${student.id}`;
+      document.getElementById("modalStudentName").textContent = student.name;
+      document.getElementById("modalStudentDate").textContent = new Date(
+        student.created_at
+      ).toLocaleString();
+
+      // Add image to modal if available
+      const modalBody = document.querySelector(".modal-body");
+      const existingImage = modalBody.querySelector(".student-image");
+      if (existingImage) {
+        existingImage.remove();
+      }
+
+      if (student.image_path) {
+        const imageContainer = document.createElement("div");
+        imageContainer.className = "student-image";
+        imageContainer.innerHTML = `
+          <img src="${API_URL}/uploads/${student.image_path}" alt="${student.name}">
+        `;
+        modalBody.insertBefore(imageContainer, modalBody.firstChild);
+      }
+
+      // Show modal
+      document.getElementById("studentModal").classList.remove("hidden");
+    } else {
+      alert(`Error: ${student.error}`);
+    }
+  } catch (error) {
+    console.error("Error viewing student:", error);
+    alert("Failed to view student details. Please try again.");
+  }
+}
+
+// Delete student
+async function deleteStudent(studentId) {
+  if (!confirm("Are you sure you want to delete this student?")) {
+    return;
+  }
+
+  try {
+    const { response, data } = await apiCall(
+      `${API_URL}/students/${studentId}`,
+      {
+        method: "DELETE",
+      }
+    );
+
+    if (response.ok) {
+      alert("Student deleted successfully");
+      fetchStudents(); // Refresh the students list
+    } else {
+      alert(`Error: ${data.error}`);
+    }
+  } catch (error) {
+    console.error("Error deleting student:", error);
+    alert("Failed to delete student. Please try again.");
   }
 }
 

@@ -84,6 +84,7 @@ facial-rec/
 │   ├── app.py         # Main Flask application
 │   ├── student_utils.py
 │   ├── seed_students.py
+│   ├── database.py    # Database management utilities
 │   ├── requirements.txt
 │   ├── Dockerfile
 │   ├── docker-compose.yml
@@ -96,6 +97,7 @@ facial-rec/
 │   ├── index.html
 │   ├── app.js
 │   ├── styles.css
+│   ├── images/        # Frontend image assets
 │   └── README.md
 └── standalone/        # Simplified version
     ├── camera_to_api.py

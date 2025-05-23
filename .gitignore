@@ -1,3 +1,6 @@
 api/attendance.csv
 api/student_embeddings.pkl
 **.pyc
+api/students/*/*.jpg
+api/uploads/students/images/*.jpg
+api/facial_rec.db
