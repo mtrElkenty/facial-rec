@@ -1,7 +1,9 @@
 services:
   api:
     build: .
+    container_name: face_rec_api
     ports:
       - "5000:5000"
     volumes:
+      - ./uploads:/app/uploads
       - ./facial_rec.db:/app/facial_rec.db
