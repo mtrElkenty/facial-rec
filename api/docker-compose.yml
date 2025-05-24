@@ -4,5 +4,4 @@ services:
     ports:
       - "5000:5000"
     volumes:
-      - ./attendance.csv:/app/attendance.csv
-      - ./student_embeddings.pkl:/app/student_embeddings.pkl
+      - ./facial_rec.db:/app/facial_rec.db
