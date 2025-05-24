@@ -52,8 +52,11 @@ document.querySelectorAll(".upload-area").forEach((area) => {
   area.appendChild(previewCount);
 
   // Make the entire area clickable
-  area.addEventListener("click", () => {
-    input.click();
+  area.addEventListener("click", (e) => {
+    // Only trigger if clicking the area itself, not its children
+    if (e.target === area) {
+      input.click();
+    }
   });
 
   input.addEventListener("change", (e) => {
@@ -197,25 +200,38 @@ document.addEventListener("DOMContentLoaded", () => {
 document
   .getElementById("registerForm")
   .addEventListener("submit", async (e) => {
+    console.log("Form submission started");
     e.preventDefault();
+
     const form = e.target;
     const formData = new FormData();
 
-    formData.append("name", document.getElementById("studentName").value);
+    const studentName = document.getElementById("studentName").value;
+    console.log("Student name:", studentName);
+    formData.append("name", studentName);
 
-    // Append all selected files
-    const files = form.querySelector('input[type="file"]').files;
-    for (let i = 0; i < files.length; i++) {
-      formData.append("images", files[i]);
+    // Get files from the file input
+    const fileInput = form.querySelector('#registerUpload input[type="file"]');
+    if (!fileInput || fileInput.files.length === 0) {
+      alert("Please select at least one photo");
+      return;
+    }
+
+    console.log("Number of files:", fileInput.files.length);
+
+    for (let i = 0; i < fileInput.files.length; i++) {
+      formData.append("images", fileInput.files[i]);
     }
 
     try {
+      console.log("Sending request to server...");
       const { response } = await apiCall(`${API_URL}/students`, {
         method: "POST",
         body: formData,
       });
 
       if (response.ok) {
+        console.log("Registration successful");
         // Hide the form and refresh the students list
         registerFormContainer.classList.add("hidden");
         toggleRegisterForm.textContent = "Register New Student";
@@ -352,3 +368,181 @@ async function deleteStudent(studentId) {
 
 // Initial attendance load
 loadAttendance();
+
+// Camera functionality
+let stream = null;
+const cameraPreview = document.getElementById("cameraPreview");
+const captureBtn = document.getElementById("captureBtn");
+const toggleCameraBtn = document.getElementById("toggleCameraBtn");
+const cameraContainer = document.getElementById("cameraContainer");
+const uploadContainer = document.getElementById("uploadContainer");
+const fileInput = document.querySelector('#registerUpload input[type="file"]');
+const browseFileBtn = document.getElementById("browseFileBtn");
+
+// Toggle between camera and file upload
+toggleCameraBtn.addEventListener("click", async () => {
+  if (stream) {
+    // If camera is active, switch to file upload
+    stream.getTracks().forEach((track) => track.stop());
+    stream = null;
+    cameraContainer.style.display = "none";
+    uploadContainer.style.display = "none";
+    browseFileBtn.style.display = "inline-block";
+    toggleCameraBtn.textContent = "Use Camera";
+  } else {
+    // If file upload is active, switch to camera
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      cameraPreview.srcObject = stream;
+      cameraContainer.style.display = "block";
+      uploadContainer.style.display = "none";
+      browseFileBtn.style.display = "none";
+      toggleCameraBtn.textContent = "Switch to File Upload";
+    } catch (err) {
+      console.error("Error accessing camera:", err);
+      alert(
+        "Could not access camera. Please make sure you have granted camera permissions."
+      );
+    }
+  }
+});
+
+browseFileBtn.addEventListener("click", () => {
+  if (stream) {
+    stream.getTracks().forEach((track) => track.stop());
+    stream = null;
+  }
+  cameraContainer.style.display = "none";
+  uploadContainer.style.display = "none";
+  browseFileBtn.style.display = "inline-block";
+  toggleCameraBtn.textContent = "Use Camera";
+  fileInput.click();
+});
+
+// Capture photo from camera
+captureBtn.addEventListener("click", () => {
+  const canvas = document.createElement("canvas");
+  canvas.width = cameraPreview.videoWidth;
+  canvas.height = cameraPreview.videoHeight;
+  canvas.getContext("2d").drawImage(cameraPreview, 0, 0);
+
+  // Convert canvas to blob
+  canvas.toBlob((blob) => {
+    const file = new File([blob], `photo_${Date.now()}.jpg`, {
+      type: "image/jpeg",
+    });
+
+    // Create a FileList-like object
+    const dataTransfer = new DataTransfer();
+    dataTransfer.items.add(file);
+
+    // Update the file input
+    fileInput.files = dataTransfer.files;
+
+    // Trigger the file input change event to update previews
+    const event = new Event("change", { bubbles: true });
+    fileInput.dispatchEvent(event);
+  }, "image/jpeg");
+});
+
+// Clean up camera when form is reset
+document.getElementById("registerForm").addEventListener("reset", () => {
+  if (stream) {
+    stream.getTracks().forEach((track) => track.stop());
+    stream = null;
+  }
+  cameraContainer.style.display = "none";
+  uploadContainer.style.display = "none";
+  browseFileBtn.style.display = "inline-block";
+  toggleCameraBtn.textContent = "Use Camera";
+});
+
+// Match form camera functionality
+let matchStream = null;
+const matchCameraPreview = document.getElementById("matchCameraPreview");
+const matchCaptureBtn = document.getElementById("matchCaptureBtn");
+const matchToggleCameraBtn = document.getElementById("matchToggleCameraBtn");
+const matchCameraContainer = document.getElementById("matchCameraContainer");
+const matchUploadContainer = document.getElementById("matchUploadContainer");
+const matchFileInput = document.querySelector(
+  '#matchUpload input[type="file"]'
+);
+const matchBrowseFileBtn = document.getElementById("matchBrowseFileBtn");
+
+// Toggle between camera and file upload for match form
+matchToggleCameraBtn.addEventListener("click", async () => {
+  if (matchStream) {
+    // If camera is active, switch to file upload
+    matchStream.getTracks().forEach((track) => track.stop());
+    matchStream = null;
+    matchCameraContainer.style.display = "none";
+    matchUploadContainer.style.display = "none";
+    matchBrowseFileBtn.style.display = "inline-block";
+    matchToggleCameraBtn.textContent = "Use Camera";
+  } else {
+    // If file upload is active, switch to camera
+    try {
+      matchStream = await navigator.mediaDevices.getUserMedia({ video: true });
+      matchCameraPreview.srcObject = matchStream;
+      matchCameraContainer.style.display = "block";
+      matchUploadContainer.style.display = "none";
+      matchBrowseFileBtn.style.display = "none";
+      matchToggleCameraBtn.textContent = "Switch to File Upload";
+    } catch (err) {
+      console.error("Error accessing camera:", err);
+      alert(
+        "Could not access camera. Please make sure you have granted camera permissions."
+      );
+    }
+  }
+});
+
+matchBrowseFileBtn.addEventListener("click", () => {
+  if (matchStream) {
+    matchStream.getTracks().forEach((track) => track.stop());
+    matchStream = null;
+  }
+  matchCameraContainer.style.display = "none";
+  matchUploadContainer.style.display = "none";
+  matchBrowseFileBtn.style.display = "inline-block";
+  matchToggleCameraBtn.textContent = "Use Camera";
+  matchFileInput.click();
+});
+
+// Capture photo from camera for match form
+matchCaptureBtn.addEventListener("click", () => {
+  const canvas = document.createElement("canvas");
+  canvas.width = matchCameraPreview.videoWidth;
+  canvas.height = matchCameraPreview.videoHeight;
+  canvas.getContext("2d").drawImage(matchCameraPreview, 0, 0);
+
+  // Convert canvas to blob
+  canvas.toBlob((blob) => {
+    const file = new File([blob], `photo_${Date.now()}.jpg`, {
+      type: "image/jpeg",
+    });
+
+    // Create a FileList-like object
+    const dataTransfer = new DataTransfer();
+    dataTransfer.items.add(file);
+
+    // Update the file input
+    matchFileInput.files = dataTransfer.files;
+
+    // Trigger the file input change event to update previews
+    const event = new Event("change", { bubbles: true });
+    matchFileInput.dispatchEvent(event);
+  }, "image/jpeg");
+});
+
+// Clean up camera when match form is reset
+document.getElementById("matchForm").addEventListener("reset", () => {
+  if (matchStream) {
+    matchStream.getTracks().forEach((track) => track.stop());
+    matchStream = null;
+  }
+  matchCameraContainer.style.display = "none";
+  matchUploadContainer.style.display = "none";
+  matchBrowseFileBtn.style.display = "inline-block";
+  matchToggleCameraBtn.textContent = "Use Camera";
+});
