@@ -5,5 +5,7 @@ services:
     ports:
       - "5000:5000"
     volumes:
-      - ./uploads:/app/uploads
-      - ./facial_rec.db:/app/facial_rec.db
+      # host_path:container_path
+      # - ./uploads:/app/uploads
+      # - ./facial_rec.db:/app/facial_rec.db
+      - .:/app

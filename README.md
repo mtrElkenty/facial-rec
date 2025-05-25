@@ -136,6 +136,7 @@ facial-rec/
 The system can be deployed using Docker:
 
 ```bash
+cd api
 docker-compose up -d
 ```
 

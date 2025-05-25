@@ -35,7 +35,7 @@ def match():
     image.save(path)
 
     try:
-        embedding = get_face_embedding(path)
+        embedding = get_face_embedding(path) # return a numerical representation of the face
         name = find_best_match(embedding)
         log_attendance(name)
         return jsonify({"match": name})
@@ -187,4 +187,4 @@ def serve_image(filename):
     return send_from_directory(UPLOAD_FOLDER, filename)
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
+    app.run(host="0.0.0.0", port=5000, debug=True) # To enable hot reloading

@@ -53,6 +53,7 @@ def find_best_match(live_embedding):
     for name, emb_bytes in students:
         # Convert bytes back to embedding
         emb = pickle.loads(emb_bytes)
+        # Score: 0 -> 1. Best to worst
         score = cosine(live_embedding, emb)
         print(f"Score for {name}: {score}") 
         if score < best_score and score < THRESHOLD:
